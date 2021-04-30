@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>I just want an image on my page</title>
+  <script>
+    __dirname = '/squoosh/';
+  </script>
+</head>
+
+<body>
+  <template id="previewListItem">
+    <li><span data-bind_id="name"></span><a data-bind_href="url">Preview</a></li>
+  </template>
+  <file-drop id="imageDrop" accept='image/*'>
+    <div id="app">
+      <section id="dropbox">
+        <div id="instructions">
+          <h2>I just want to put an image on my page</h2>
+          <p>Making images fast is hard.</p>
+          <p>A good image should be the highest visible quality at the smallest possible size.</p>
+          <p>This tool will:</p>
+          <ul>
+            <li>Work out the best sizes to encode your image.</li>
+            <li>Create the correct HTML for you to drop on your page.</li>
+            <li>Encode the image into the corrects sizes and with the best codecs.</li>
+          </ul>
+          <p>Drop or pick the best version of the image you have.</p>
+          <input type="file" id="fileSelect">
+        </div>
+        <img id="preview">
+      </section>
+
+      <section id="html">
+        <h2>HTML</h2>
+        <pre class="lang-html"><code id="code">&lt;img /&gt;</code></pre>
+      </section>
+
+      <section id="output-section">
+        <h2>Generated Images</h2>
+        <div id="image-output">
+          <h3>AVIF</h3>
+          <ul id="avif-output">
+
+          </ul>
+          <h3>PNG</h3>
+          <div id="png-output">
+          </div>
+        </div>
+      </section>
+
+      <section id="cli-section">
+        <h2>CLI</h2>
+        <p>Create the images using the command-line.</p>
+        <pre class="lang-shell"><code id="cli">$ </code></pre>
+      </section>
+    </div>
+  </file-drop>
+  <script type="module" src="/main.js"></script>
+</body>
+
+</html>

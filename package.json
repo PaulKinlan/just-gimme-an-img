@@ -1,0 +1,16 @@
+{
+  "name": "just-an-image",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^2.1.5"
+  },
+  "dependencies": {
+    "file-drop-element": "^1.0.1",
+    "prismjs": "^1.23.0"
+  }
+}
