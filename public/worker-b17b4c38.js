@@ -1,4 +1,4 @@
-import { i as instantiateEmscriptenWasm, W as WorkerPool, c as codecs, p as preprocessors } from './worker_pool-bba7ad7e.js';
+import { i as instantiateEmscriptenWasm, c as codecs, p as preprocessors } from './codecs-79d06749.js';
 
 var visdif = function () {
   var _scriptDir = import.meta.url;
@@ -1549,7 +1549,7 @@ async function decodeFile(file) {
 
   const buffer = await file.arrayBuffer();
   const firstChunk = buffer.slice(0, 16);
-  const firstChunkString = new Uint8Array(firstChunk).reduce((prev, curr) => prev + String.fromCodePoint(curr), "");
+  const firstChunkString = new Uint8Array(firstChunk).reduce((prev, curr) => prev + String.fromCodePoint(curr), '');
   const key = (_Object$entries$find = Object.entries(codecs).find(([name, {
     detectors
   }]) => detectors.some(detector => detector.exec(firstChunkString)))) == null ? void 0 : _Object$entries$find[0];
@@ -1649,4 +1649,14 @@ function handleJob(params) {
   }
 }
 
-WorkerPool.useThisThreadAsWorker(handleJob);
+self.addEventListener('message', async event => {
+  const {
+    msg,
+    id
+  } = event.data;
+  const result = await handleJob(msg);
+  self.postMessage({
+    result,
+    id
+  });
+});

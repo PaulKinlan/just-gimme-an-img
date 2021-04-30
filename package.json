@@ -16,6 +16,7 @@
   },
   "license": "Apache-2.0",
   "description": "Website to optimize images",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/PaulKinlan/just-gimme-an-img.git"
