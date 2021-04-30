@@ -1,4 +1,4 @@
-import { i as instantiateEmscriptenWasm, W as WorkerPool, c as codecs, p as preprocessors } from './worker_pool-bba7ad7e.js';
+import { i as instantiateEmscriptenWasm, W as WorkerPool, c as codecs, p as preprocessors } from '../squoosh/worker_pool-bba7ad7e.js';
 
 var visdif = function () {
   var _scriptDir = import.meta.url;
