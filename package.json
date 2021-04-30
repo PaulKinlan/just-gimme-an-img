@@ -10,6 +10,7 @@
     "vite": "^2.1.5"
   },
   "dependencies": {
+    "@web/rollup-plugin-import-meta-assets": "^1.0.6",
     "file-drop-element": "^1.0.1",
     "prismjs": "^1.23.0"
   }

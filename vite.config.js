@@ -1,5 +1,11 @@
+import { importMetaAssets } from '@web/rollup-plugin-import-meta-assets';
+
 export default {
-  optimizeDeps: {
-    entries: ["/squoosh"]
-  }
+  plugins: [
+    {
+      ...importMetaAssets(),
+      enforce: 'post',
+      apply: 'build'
+    }
+  ]
 }
