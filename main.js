@@ -3,6 +3,8 @@ import { run } from "./squoosh/index.js";
 import "file-drop-element";
 import "prismjs/themes/prism-okaidia.css";
 import Prism from "prismjs";
+import {basename, extname} from './utils';
+
 
 const calculateSizes = (width, height) => {
   const sizes = [];
@@ -63,33 +65,22 @@ const onFile = (e) => {
     updateHTML(sizes, name, naturalHeight, naturalWidth);
 
     Prism.highlightAll(); 
+    
+    const spinner = document.getElementById("loader-container");
+    spinner.classList.remove("hidden");
 
     const avifOutput = document.getElementById("avif-output");
-
-    for (let [width, height] of sizes) {
-      const results = await run({files: [file], "resize": { width, height }, "avif": "auto"});
-      
-      for (let file of results.values()) {
-        const output = new Blob([file.outputs[0].out.buffer], {type:"image/avif"});
-
-        const url = URL.createObjectURL(output);
-
-        avifOutput.appendChild(applyTemplate(previewListItem, {name: `${name}-${width}`,url, width, height}));
-      }
-    }
-
     const pngOutput = document.getElementById("png-output");
+   
+    
+    await compressAndOutputImages(file, sizes, avifOutput, "image/avif", {
+      "avif": "auto",
+    });
+    await compressAndOutputImages(file, sizes, pngOutput, "image/png", {
+      "oxipng": "auto",
+    });
 
-    for (let [width, height] of sizes) {
-      const results = await run({files: [file], "resize": { width, height }, "oxipng": "auto"});
-      
-      for (let file of results.values()) {
-        const output = new Blob([file.outputs[0].out.buffer], {type:"image/png"});
-        const url = URL.createObjectURL(output);
-
-        pngOutput.appendChild(applyTemplate(previewListItem, {name: `${name}-${width}`,url, width, height}));
-      }
-    }
+    spinner.classList.add("hidden");
   };
 }
 
@@ -102,23 +93,25 @@ Prism.hooks.add("before-highlight", function (env) {
 
 const updateHTML = (sizes, name, naturalHeight, naturalWidth) => {
 
-  const extension = name.substring(name.lastIndexOf(".") +1);
-  const nameNoExtension = name.substring(0, name.lastIndexOf("."));
+  const extension = extname(name);
+  const nameNoExtension = basename(name, extension);
+
   let sources = `<source 
     type="image/avif"
     srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.avif ${width}w`).join(", \n\t\t")}">`;
+  
   code.innerText = `<picture>
   ${sources}
   <img 
-    alt=""
+    alt="The Author should add something here"
     src="${(encodeURIComponent(name))}" 
-    srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.${extension} ${width}w`).join(", \n\t\t")}"
+    srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w${extension} ${width}w`).join(", \n\t\t")}"
     size="100vw"
     loading="lazy"
     decoding="async"
     height="${naturalHeight}"
     width="${naturalWidth}"
-    style="content-visibility: auto; max-width: 100%;"
+    style="content-visibility: auto; max-width: 100%; height: auto;"
   />
 </picture>`;
 }
@@ -132,5 +125,43 @@ const updateCLI = (sizes, name) => {
     ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --oxipng auto -s \-${width}w ${name.split(" ").join("\\ ")}`
   ));
   cli.innerText = cliCommands.join(' && \\ \n  ');
+}
+
+const getExtensionFromMimeType = (mimeType) => {
+  const extensions = {
+    'image/png': 'png',
+    'image/avif': 'avif',
+    'image/jpeg': 'jpeg',
+    'image/webp': 'webp'
+  }
+
+  if (mimeType in extensions) {
+    return extensions[mimeType];
+  }
+
+  throw "Mime-type unknown."
+}
+
+async function compressAndOutputImages(fileToConvert, sizes, element, mimeType, cliOptions) {
+  const {name} = fileToConvert;
+  const extension = getExtensionFromMimeType(mimeType);
+
+  element.innerHTML = "";
+
+  for (let [width, height] of sizes) {
+
+    cliOptions["resize"] = { width, height };
+
+    const results = await run({ files: [fileToConvert], ...cliOptions});
+
+    for (let file of results.values()) {
+      const outputFile = file.outputs[0];
+      const output = new Blob([file.outputs[0].out.buffer], { type: mimeType });
+
+      const url = URL.createObjectURL(output);
+
+      element.appendChild(applyTemplate(previewListItem, { name: `${basename(name, extname(name))}-${width}.${extension}`, url, width, height, size: `${(outputFile.outputSize / 1024).toFixed(3)} KB` }));
+    }
+  }
 }
 

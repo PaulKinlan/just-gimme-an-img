@@ -13,7 +13,11 @@
 
 <body>
   <template id="previewListItem">
-    <li><span data-bind_id="name"></span><a data-bind_href="url" target="_blank">Preview</a></li>
+    <li>
+      <span data-bind_inner-text="size"></span>
+      <a data-bind_href="url" target="_blank" data-bind_inner-text="name"></a>
+      <a data-bind_href="url" data-bind_download="name">[Save]</a>
+    </li>
   </template>
   <file-drop id="imageDrop" accept='image/*'>
     <div id="app">
@@ -22,10 +26,11 @@
           <h2>I just want to put an image on my page</h2>
           <p>Making images fast is hard.</p>
           <p>A good image should be the highest visible quality at the smallest possible size.</p>
+          <p>You shouldn't need to buy a book to optimize an image.</p>
           <p>This tool will:</p>
           <ul>
             <li>Work out the best sizes to encode your image.</li>
-            <li>Create the correct HTML for you to drop on your page.</li>
+            <li>Create the correct HTML for you to drop on to your page.</li>
             <li>Encode the image into the corrects sizes and with the best codecs.</li>
           </ul>
           <p>Drop or pick the best version of the image you have.</p>
@@ -40,21 +45,25 @@
       </section>
 
       <section id="output-section">
-        <h2>Generated Images</h2>
+        <h2>Optimised Images</h2>
         <div id="image-output">
           <h3>AVIF</h3>
           <ul id="avif-output">
-
+            <li>Nothing encoded yet</li>
           </ul>
           <h3>PNG</h3>
           <ul id="png-output">
+            <li>Nothing encoded yet</li>
           </ul>
+          <div id="loader-container" class="hidden">
+            <div id="loader">Loading...</div>
+          </div>
         </div>
       </section>
 
       <section id="cli-section">
         <h2>CLI</h2>
-        <p>Create the images using the command-line.</p>
+        <p>Create the optimized images with <a href="https://squoosh.app">Squoosh</a> on the command-line.</p>
         <pre class="lang-shell"><code id="cli">$ </code></pre>
       </section>
     </div>
