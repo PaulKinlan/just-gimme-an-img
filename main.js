@@ -128,7 +128,6 @@ const updateCLI = (sizes, name) => {
     ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --avif auto -s \-${width}w ${name.split(" ").join("\\ ")}`
   );
 
-  cliCommands.push(`npx @squoosh/cli --oxipng auto -s -original ${name.split(" ").join("\\ ")}`);
   cliCommands.push(...sizes.map(
     ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --oxipng auto -s \-${width}w ${name.split(" ").join("\\ ")}`
   ));
