@@ -13,7 +13,7 @@
 
 <body>
   <template id="previewListItem">
-    <li><span data-bind_id="name"></span><a data-bind_href="url">Preview</a></li>
+    <li><span data-bind_id="name"></span><a data-bind_href="url" target="_blank">Preview</a></li>
   </template>
   <file-drop id="imageDrop" accept='image/*'>
     <div id="app">
@@ -47,8 +47,8 @@
 
           </ul>
           <h3>PNG</h3>
-          <div id="png-output">
-          </div>
+          <ul id="png-output">
+          </ul>
         </div>
       </section>
 

@@ -85,9 +85,9 @@ const onFile = (e) => {
       
       for (let file of results.values()) {
         const output = new Blob([file.outputs[0].out.buffer], {type:"image/png"});
-        const previewImageElement = new Image();
-        previewImageElement.src = URL.createObjectURL(output);
-        pngOutput.appendChild(previewImageElement);
+        const url = URL.createObjectURL(output);
+
+        pngOutput.appendChild(applyTemplate(previewListItem, {name: `${name}-${width}`,url, width, height}));
       }
     }
   };
