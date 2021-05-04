@@ -1,4 +1,4 @@
-import { run } from "./squoosh/index.js";
+import { run } from "../squoosh/index.js";
 
 
 export default async (req) => {
