@@ -7,6 +7,9 @@ export default {
     soucemap: false
   },
   plugins: [
-    VitePWA()
+    VitePWA({
+      base: '/',
+      mode: 'development',
+    })
   ]
 }

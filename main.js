@@ -5,6 +5,17 @@ import "prismjs/themes/prism-okaidia.css";
 import Prism from "prismjs";
 import {basename, extname} from './utils';
 
+import { registerSW } from 'virtual:pwa-register'
+import { applyTemplate } from "./lib/applyTemplate";
+
+const updateSW = registerSW({
+  onNeedRefresh() {
+    // show a prompt to user
+  },
+  onOfflineReady() {
+    // show a ready to work offline to user
+  },
+})
 
 const calculateSizes = (width, height) => {
   const sizes = [];
@@ -20,31 +31,6 @@ const calculateSizes = (width, height) => {
   return sizes;
 };
 
-const applyTemplate = (templateElement, data) => {
-  const element = templateElement.content.cloneNode(true);    
-  const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, () => NodeFilter.FILTER_ACCEPT);
-
-  while(treeWalker.nextNode()) {
-    const node = treeWalker.currentNode;
-    for(let bindAttr in node.dataset) {
-      let isBindableAttr = (bindAttr.indexOf('bind_') == 0) ? true : false;
-      if(isBindableAttr) {
-        let dataKeyString = node.dataset[bindAttr];
-        let dataKeys = dataKeyString.split("|");
-        let bindKey = bindAttr.substr(5);
-        for(let dataKey of dataKeys) {
-          if(dataKey in data && data[dataKey] !== "") {
-            node[bindKey] = data[dataKey];
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  return element;
-}
-
 /*
 Plan:
 * Determine the image type.
@@ -54,17 +40,20 @@ Plan:
 
 const onFile = (e) => {
   const file = (e.target?.files || e.files)[0];
-  const mimeType = file.type;
-  const targetBaseCodec = getCodecFromMimeType(mimeType);
   const { name } = file;
 
   preview.src = URL.createObjectURL(file);
   preview.onload = async () => {
+    const [sourceElementStrategy, imgElementStrategy] = getConversionStrategyForInput(file.type);
+
+    const sourceElementMimeType = getMimeTypeFromStrategy(sourceElementStrategy);
+    const imgElementMimeType = getMimeTypeFromStrategy(imgElementStrategy);
+    
     const { naturalHeight, naturalWidth } = preview;
     const sizes = calculateSizes(naturalWidth, naturalHeight);
 
-    updateCLI(sizes, name, targetBaseCodec);
-    updateHTML(sizes, name, file.type, naturalHeight, naturalWidth);
+    updateCLI(sizes, name, sourceElementStrategy, imgElementStrategy);
+    updateHTML(sizes, name, sourceElementMimeType, imgElementMimeType, naturalHeight, naturalWidth);
 
     Prism.highlightAll(); 
     
@@ -73,14 +62,9 @@ const onFile = (e) => {
 
     const avifOutput = document.getElementById("avif-output");
     const pngOutput = document.getElementById("png-output");
-   
     
-    await compressAndOutputImages(file, sizes, avifOutput, "image/avif", {
-      "avif": "auto",
-    });
-    await compressAndOutputImages(file, sizes, pngOutput, "image/png", {
-      "oxipng": "auto",
-    });
+    await compressAndOutputImages(file, sizes, avifOutput, sourceElementMimeType);
+    await compressAndOutputImages(file, sizes, pngOutput, imgElementMimeType);
 
     spinner.classList.add("hidden");
   };
@@ -93,22 +77,25 @@ Prism.hooks.add("before-highlight", function (env) {
   env.code = env.element.innerText;
 });
 
-const updateHTML = (sizes, name, targetMimeType, naturalHeight, naturalWidth) => {
+const updateHTML = (sizes, name, sourceElementMimeType, imgElementMimeType, naturalHeight, naturalWidth) => {
 
   const extension = extname(name);
   const nameNoExtension = basename(name, extension);
 
+  const sourceExtension = getExtensionFromMimeType(sourceElementMimeType);
+  const imgExtension =  getExtensionFromMimeType(imgElementMimeType);
+
   let sources = `<source 
-    type="image/avif"
+    type="${sourceElementMimeType}"
     size="100vw"
-    srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.avif ${width}w`).join(", \n\t\t")}">`;
+    srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.${sourceExtension} ${width}w`).join(", \n\t\t")}">`;
   
   code.innerText = `<picture>
   ${sources}
   <img 
     alt="The Author should add something here"
-    src="${(encodeURIComponent(name))}" 
-    srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.${getExtensionFromMimeType(targetMimeType)} ${width}w`).join(", \n\t\t")}"
+    src="${(encodeURIComponent(nameNoExtension))}.${imgExtension}" 
+    srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.${imgExtension} ${width}w`).join(", \n\t\t")}"
     size="100vw"
     loading="lazy"
     decoding="async"
@@ -119,15 +106,30 @@ const updateHTML = (sizes, name, targetMimeType, naturalHeight, naturalWidth) =>
 </picture>`;
 }
 
-const updateCLI = (sizes, name, targetBaseCodec) => {
+const updateCLI = (sizes, name, targetBaseCodec, targetSourceCodec) => {
   let cliCommands = sizes.map(
-    ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --avif auto -s \-${width}w ${name.split(" ").join("\\ ")}`
+    ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --${targetSourceCodec} auto -s \-${width}w ${name.split(" ").join("\\ ")}`
   );
 
   cliCommands.push(...sizes.map(
     ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --${targetBaseCodec} auto -s \-${width}w ${name.split(" ").join("\\ ")}`
   ));
   cli.innerText = cliCommands.join(' && \\ \n  ');
+}
+
+const getCLIOptionsFromMimeType = (mimeType) => {
+  const extensions = {
+    'image/png': { "oxipng": "auto" },
+    'image/avif': { "avif": "auto" },
+    'image/jpeg': { "mozjpeg": "auto" },
+    'image/webp': { "webp": "auto" }
+  }
+
+  if (mimeType in extensions) {
+    return extensions[mimeType];
+  }
+
+  throw "Mime-type unknown."
 }
 
 const getExtensionFromMimeType = (mimeType) => {
@@ -160,12 +162,44 @@ const getCodecFromMimeType = (mimeType) => {
   throw "Mime-type unknown."
 }
 
+const getConversionStrategyForInput = (mimeType) => {
+  // Our strategy is here.
+  // <source> is 0, <img> is 1.
+  const codecs = {
+    'image/png': ['avif', 'png'],
+    'image/avif': ['avif', 'png'], // AVIF should be in the source, then png in the image.
+    'image/jpeg': ['avif', 'mozjpeg'],
+    'image/webp': ['avif', 'webp'] // Should we actually have a fallback of png...?
+  }
 
+  if (mimeType in codecs) {
+    return codecs[mimeType];
+  }
 
+  throw "Mime-type unknown."
+}
 
-async function compressAndOutputImages(fileToConvert, sizes, element, mimeType, cliOptions) {
+const getMimeTypeFromStrategy = (mimeType) => {
+  // Our strategy is here.
+  // <source> is 0, <img> is 1.
+  const codecs = {
+    'png': 'image/png',
+    'avif': 'image/avif',
+    'mozjpeg': 'image/jpeg',
+    'webp': 'image/webp'
+  }
+
+  if (mimeType in codecs) {
+    return codecs[mimeType];
+  }
+
+  throw "Mime-type unknown."
+}
+
+async function compressAndOutputImages(fileToConvert, sizes, element, mimeType) {
   const {name} = fileToConvert;
   const extension = getExtensionFromMimeType(mimeType);
+  const cliOptions = getCLIOptionsFromMimeType(mimeType)
 
   element.innerHTML = "";
 
