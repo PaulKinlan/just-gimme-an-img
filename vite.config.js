@@ -1,4 +1,4 @@
-import { importMetaAssets } from '@web/rollup-plugin-import-meta-assets';
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default {
   build: {
@@ -7,9 +7,6 @@ export default {
     soucemap: false
   },
   plugins: [
-    {
-      //...importMetaAssets(),
-      enforce: 'post',
-    }
+    VitePWA()
   ]
 }
