@@ -54,6 +54,8 @@ Plan:
 
 const onFile = (e) => {
   const file = (e.target?.files || e.files)[0];
+  const mimeType = file.type;
+  const targetBaseCodec = getCodecFromMimeType(mimeType);
   const { name } = file;
 
   preview.src = URL.createObjectURL(file);
@@ -61,8 +63,8 @@ const onFile = (e) => {
     const { naturalHeight, naturalWidth } = preview;
     const sizes = calculateSizes(naturalWidth, naturalHeight);
 
-    updateCLI(sizes, name);
-    updateHTML(sizes, name, naturalHeight, naturalWidth);
+    updateCLI(sizes, name, targetBaseCodec);
+    updateHTML(sizes, name, file.type, naturalHeight, naturalWidth);
 
     Prism.highlightAll(); 
     
@@ -91,13 +93,14 @@ Prism.hooks.add("before-highlight", function (env) {
   env.code = env.element.innerText;
 });
 
-const updateHTML = (sizes, name, naturalHeight, naturalWidth) => {
+const updateHTML = (sizes, name, targetMimeType, naturalHeight, naturalWidth) => {
 
   const extension = extname(name);
   const nameNoExtension = basename(name, extension);
 
   let sources = `<source 
     type="image/avif"
+    size="100vw"
     srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.avif ${width}w`).join(", \n\t\t")}">`;
   
   code.innerText = `<picture>
@@ -105,7 +108,7 @@ const updateHTML = (sizes, name, naturalHeight, naturalWidth) => {
   <img 
     alt="The Author should add something here"
     src="${(encodeURIComponent(name))}" 
-    srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w${extension} ${width}w`).join(", \n\t\t")}"
+    srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.${getExtensionFromMimeType(targetMimeType)} ${width}w`).join(", \n\t\t")}"
     size="100vw"
     loading="lazy"
     decoding="async"
@@ -116,13 +119,13 @@ const updateHTML = (sizes, name, naturalHeight, naturalWidth) => {
 </picture>`;
 }
 
-const updateCLI = (sizes, name) => {
+const updateCLI = (sizes, name, targetBaseCodec) => {
   let cliCommands = sizes.map(
     ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --avif auto -s \-${width}w ${name.split(" ").join("\\ ")}`
   );
 
   cliCommands.push(...sizes.map(
-    ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --oxipng auto -s \-${width}w ${name.split(" ").join("\\ ")}`
+    ([width, height]) => `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --${targetBaseCodec} auto -s \-${width}w ${name.split(" ").join("\\ ")}`
   ));
   cli.innerText = cliCommands.join(' && \\ \n  ');
 }
@@ -141,6 +144,24 @@ const getExtensionFromMimeType = (mimeType) => {
 
   throw "Mime-type unknown."
 }
+
+const getCodecFromMimeType = (mimeType) => {
+  const codecs = {
+    'image/png': 'oxipng',
+    'image/avif': 'avif',
+    'image/jpeg': 'mozjpeg',
+    'image/webp': 'webp'
+  }
+
+  if (mimeType in codecs) {
+    return codecs[mimeType];
+  }
+
+  throw "Mime-type unknown."
+}
+
+
+
 
 async function compressAndOutputImages(fileToConvert, sizes, element, mimeType, cliOptions) {
   const {name} = fileToConvert;
