@@ -87,16 +87,16 @@ const updateHTML = (sizes, name, sourceElementMimeType, imgElementMimeType, natu
 
   let sources = `<source 
     type="${sourceElementMimeType}"
-    size="100vw"
+    sizes="100vw"
     srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.${sourceExtension} ${width}w`).join(", \n\t\t")}">`;
   
   code.innerText = `<picture>
   ${sources}
   <img 
-    alt="The Author should add something here"
+    alt="The Author should a description of what appears in the image."
     src="${(encodeURIComponent(nameNoExtension))}.${imgExtension}" 
     srcset="${sizes.map(([width]) => `${encodeURIComponent(nameNoExtension)}\-${width}w.${imgExtension} ${width}w`).join(", \n\t\t")}"
-    size="100vw"
+    sizes="100vw"
     loading="lazy"
     decoding="async"
     height="${naturalHeight}"
