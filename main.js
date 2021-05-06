@@ -31,17 +31,17 @@ const calculateSizes = (width, height) => {
   return sizes;
 };
 
-/*
-Plan:
-* Determine the image type.
-* If jpeg, assume that will be good as a base image, don't re-encode.
-* If png, assume that will be good as a base image, don't re-encode.
-*/
+let file;
 
 const onFile = (e) => {
-  const file = (e.target?.files || e.files)[0];
+  goButton.disabled = false;
+  file = (e.target?.files || e.files)[0];
+}
+
+const onGoClicked = (e) => {
   const { name } = file;
 
+  // We have to load the image to get the width and height.
   preview.src = URL.createObjectURL(file);
   preview.onload = async () => {
     const [
@@ -73,6 +73,7 @@ const onFile = (e) => {
     spinner.classList.remove("hidden");
 
     const rootOutputElement = document.getElementById("image-output");
+    rootOutputElement.innerHTML = "";
 
     await compressAndOutputImages(
       file,
@@ -88,6 +89,7 @@ const onFile = (e) => {
 
 fileSelect.addEventListener("change", onFile);
 imageDrop.addEventListener("filedrop", onFile);
+goButton.addEventListener("click", onGoClicked);
 
 Prism.hooks.add("before-highlight", function (env) {
   env.code = env.element.innerText;

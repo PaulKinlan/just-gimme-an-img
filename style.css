@@ -25,7 +25,7 @@ body {
     "drop drop output output"
     "preview preview cli cli";
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   grid-column-gap: 10px;
   flex-grow: 1;
 }
@@ -37,12 +37,35 @@ body {
       "output"
       "preview"
       "cli";
-    grid-row-gap: 10px;
     flex-grow: 1;
 
-    grid-template-columns: initial;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: initial;
   }
+}
+
+fieldset {
+  display: flex;
+  flex-direction: column;
+  border: solid 1px #aeaeea;
+  padding: 1em;
+}
+
+fieldset * {
+  margin-top: 0.4em;
+  display: inline-block;
+}
+
+fieldset button {
+  max-width: 10em;
+  background-color: #f92672; 
+  border-color: #f92672;
+  color: white;
+  padding: 0.5em 1em;
+}
+
+fieldset button[disabled] {
+  opacity: 0.3;
 }
 
 section {
@@ -51,6 +74,8 @@ section {
   padding: 1em;
   place-self: stretch;
   background-color: white;
+  display: flex;
+  flex-direction: column;
 }
 
 #preview {

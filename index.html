@@ -31,17 +31,22 @@
       <section id="dropbox">
         <div id="instructions">
           <h2>I just want to put an image on my page</h2>
-          <p>Making images fast is hard.</p>
-          <p>A good image should be the highest visible quality at the smallest possible size.</p>
-          <p>You shouldn't need to buy a book to optimize an image.</p>
+          <p>Making images fast is hard. A good image should be the highest visible quality at the smallest possible size.</p>
           <p>This tool will:</p>
           <ul>
             <li>Work out the best sizes to encode your image.</li>
             <li>Create the correct HTML for you to drop on to your page.</li>
             <li>Encode the image into the corrects sizes and with the best codecs.</li>
           </ul>
-          <p>Drop or pick the best version of the image you have.</p>
-          <input type="file" id="fileSelect" accept="image/*">
+          <fieldset>
+            <legend>Configure</legend>
+          <label for="fileSelect">Image to Opitmise: <input type="file" id="fileSelect" accept="image/*"></label>
+          <div>
+            <label for="saveOutput">Save output to disk: <input type="checkbox" id="save"></label>
+            <label for="generatePreview">Generate Preview: <input type="checkbox" id="generatePreview"></label>
+          </div>
+          <button id="goButton" disabled>Go</button>
+          </fieldset>
         </div>
         <img id="preview">
       </section>
@@ -63,7 +68,7 @@
 
       <section id="cli-section">
         <h2>CLI</h2>
-        <p>Create the optimized images with <a href="https://squoosh.app">Squoosh</a> on the command-line.</p>
+        <p>Optimized images using <a href="https://squoosh.app">Squoosh</a> on the command-line.</p>
         <pre class="lang-shell"><code id="cli">$ </code></pre>
       </section>
     </div>
