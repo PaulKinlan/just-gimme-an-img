@@ -36,6 +36,8 @@ let file;
 const onFile = (e) => {
   goButton.disabled = false;
   file = (e.target?.files || e.files)[0];
+  let root = document.documentElement;
+  root.style.setProperty('--filename', `'${file.name}'`);
 }
 
 const onGoClicked = (e) => {

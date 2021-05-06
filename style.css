@@ -68,6 +68,33 @@ fieldset button[disabled] {
   opacity: 0.3;
 }
 
+:root {
+  --filename: 'Please select a file';
+}
+
+#fileSelect {
+  visibility: collapse;
+  user-select: none;
+  pointer-events: none;
+}
+
+#fileSelect::before {
+  content: var(--filename);
+  user-select: auto ;
+  pointer-events: initial;
+  border: 1px solid #999;
+  border-radius: 3px;
+  padding: 5px 8px;
+  outline: none;
+  white-space: nowrap;
+  cursor: pointer;
+  text-shadow: 1px 1px #fff;
+  font-weight: 700;  
+  visibility: initial;
+  width: 100%;
+  display: inline-block;
+}
+
 section {
   box-shadow: 0 4px 5px 0 rgb(0 0 0 / 14%), 0 1px 10px 0 rgb(0 0 0 / 12%), 0 2px 4px -1px rgb(0 0 0 / 30%);
   margin: 1em;
