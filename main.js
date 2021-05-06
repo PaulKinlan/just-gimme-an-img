@@ -73,7 +73,9 @@ const onGoClicked = (e) => {
     spinner.classList.remove("hidden");
 
     const rootOutputElement = document.getElementById("image-output");
-    rootOutputElement.innerHTML = "";
+    rootOutputElement.innerHTML = ""; 
+
+    renderOriginal(file, rootOutputElement, sizes[0][0], sizes[0][1]);
 
     await compressAndOutputImages(
       file,
@@ -242,6 +244,29 @@ const getMimeTypeFromStrategy = (mimeType) => {
   throw "Mime-type unknown.";
 };
 
+const renderOriginal = (fileToConvert, rootElement, width, height) => {
+
+  const { name, type } = fileToConvert;
+
+  rootElement.appendChild(applyTemplate(codecOutputTemplate, {
+    codec: 'original',
+    id: `original-output`
+  }));
+
+  const outputElement = document.getElementById(`original-output`);
+
+  outputElement.appendChild(
+    applyTemplate(previewListItemTemplate, {
+      name: `${name}`,
+      url: URL.createObjectURL(fileToConvert),
+      width,
+      height,
+      size: `${(fileToConvert.size / 1024).toFixed(2)} KB`,
+    })
+  );
+}
+
+
 async function compressAndOutputImages(
   fileToConvert,
   sizes,
@@ -276,7 +301,7 @@ async function compressAndOutputImages(
           url,
           width,
           height,
-          size: `${(outputFile.outputSize / 1024).toFixed(3)} KB`,
+          size: `${(outputFile.outputSize / 1024).toFixed(2)} KB`,
         })
       );
     }

@@ -14,9 +14,10 @@
 <body>
   <template id="previewListItemTemplate">
     <li>
+      <span data-bind_inner-text="width"></span>x<span data-bind_inner-text="height"></span> px
       <span data-bind_inner-text="size"></span>
-      <a data-bind_href="url" target="_blank" data-bind_inner-text="name"></a>
-      <a data-bind_href="url" data-bind_download="name">[Save]</a>
+      <a data-bind_href="url" target="_blank">Preview</a> | 
+      <a data-bind_href="url" data-bind_download="name">Download</a>
     </li>
   </template>
   <template id="codecOutputTemplate">
@@ -57,9 +58,9 @@
       </section>
 
       <section id="output-section">
-        <h2>Optimised Images</h2>
+        <h2>Optimized Images</h2>
         <div id="image-output">
-          
+          Your optimized images will appear here.
         </div>
         <div id="loader-container" class="hidden">
           <div id="loader">Loading...</div>
