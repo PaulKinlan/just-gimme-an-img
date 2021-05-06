@@ -1,4 +1,4 @@
-import { p as preprocessors, c as codecs } from './codecs-79d06749.js';
+import { p as preprocessors, c as codecs } from '../public/squoosh/codecs-cf5f19af.js';
 
 function assertPath(path) {
   if (typeof path !== 'string') {
@@ -5077,7 +5077,7 @@ class WorkerPool {
     const writer = this.workerQueue.writable.getWriter();
 
     for (let i = 0; i < numWorkers; i++) {
-      writer.write(new Worker(new URL("/worker-b17b4c38.js", import.meta.url), {
+      writer.write(new Worker(new URL("worker-2ead94c1.js", import.meta.url), {
         type: 'module'
       }));
     }
