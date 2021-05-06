@@ -72,16 +72,15 @@ const onFile = (e) => {
     const spinner = document.getElementById("loader-container");
     spinner.classList.remove("hidden");
 
-    const avifOutput = document.getElementById("avif-output");
-    const pngOutput = document.getElementById("png-output");
+    const rootOutputElement = document.getElementById("image-output");
 
     await compressAndOutputImages(
       file,
       sizes,
-      avifOutput,
+      rootOutputElement,
       sourceElementMimeType
     );
-    await compressAndOutputImages(file, sizes, pngOutput, imgElementMimeType);
+    await compressAndOutputImages(file, sizes, rootOutputElement, imgElementMimeType);
 
     spinner.classList.add("hidden");
   };
@@ -244,14 +243,19 @@ const getMimeTypeFromStrategy = (mimeType) => {
 async function compressAndOutputImages(
   fileToConvert,
   sizes,
-  element,
+  rootElement,
   mimeType
 ) {
   const { name } = fileToConvert;
   const extension = getExtensionFromMimeType(mimeType);
   const cliOptions = getCLIOptionsFromMimeType(mimeType);
 
-  element.innerHTML = "";
+  rootElement.appendChild(applyTemplate(codecOutputTemplate, {
+    codec: getCodecFromMimeType(mimeType),
+    id: `${getCodecFromMimeType(mimeType)}-output`
+  }));
+
+  const outputElement = document.getElementById(`${getCodecFromMimeType(mimeType)}-output`);
 
   for (let [width, height] of sizes) {
     cliOptions["resize"] = { width, height };
@@ -264,8 +268,8 @@ async function compressAndOutputImages(
 
       const url = URL.createObjectURL(output);
 
-      element.appendChild(
-        applyTemplate(previewListItem, {
+      outputElement.appendChild(
+        applyTemplate(previewListItemTemplate, {
           name: `${basename(name, extname(name))}-${width}.${extension}`,
           url,
           width,

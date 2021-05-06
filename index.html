@@ -12,12 +12,19 @@
 </head>
 
 <body>
-  <template id="previewListItem">
+  <template id="previewListItemTemplate">
     <li>
       <span data-bind_inner-text="size"></span>
       <a data-bind_href="url" target="_blank" data-bind_inner-text="name"></a>
       <a data-bind_href="url" data-bind_download="name">[Save]</a>
     </li>
+  </template>
+  <template id="codecOutputTemplate">
+    <div class="output-container">
+      <h3 data-bind_inner-text="codec"></h3>
+      <ul data-bind_id="id">
+      </ul>
+    </div>
   </template>
   <file-drop id="imageDrop" accept='image/*'>
     <div id="app">
@@ -47,17 +54,10 @@
       <section id="output-section">
         <h2>Optimised Images</h2>
         <div id="image-output">
-          <h3>AVIF</h3>
-          <ul id="avif-output">
-            <li>Nothing encoded yet</li>
-          </ul>
-          <h3>PNG</h3>
-          <ul id="png-output">
-            <li>Nothing encoded yet</li>
-          </ul>
-          <div id="loader-container" class="hidden">
-            <div id="loader">Loading...</div>
-          </div>
+          
+        </div>
+        <div id="loader-container" class="hidden">
+          <div id="loader">Loading...</div>
         </div>
       </section>
 

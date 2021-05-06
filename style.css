@@ -73,6 +73,8 @@ section {
 #output-section {
   grid-area: preview;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 #cli-section {
@@ -81,13 +83,6 @@ section {
 
 #html {
   grid-area: output;
-}
-
-#avif-output, #png-output {
-  display: flex;
-  justify-content: space-evenly;
-  flex-wrap: wrap;
-  align-items: center;
 }
 
 pre {
@@ -113,6 +108,19 @@ file-drop.drop-valid #dropbox {
 
 file-drop.drop-invalid #dropbox {
   background-color: red;
+}
+
+#image-output  {
+  text-align: left;
+  margin: 0 auto;
+}
+
+div.output-container h3 {
+  text-transform: uppercase;
+}
+
+div.output-container ul {
+
 }
 
 #loader-container {
