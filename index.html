@@ -13,11 +13,11 @@
 
 <body>
   <template id="previewListItemTemplate">
-    <li>
-      <span data-bind_inner-text="width"></span>x<span data-bind_inner-text="height"></span> px
+    <li data-bind_id="name">
+      <span data-bind_inner-text="width"></span>x<span data-bind_inner-text="height"></span>px
       <span data-bind_inner-text="size"></span>
-      <a data-bind_href="url" target="_blank">Preview</a> | 
-      <a data-bind_href="url" data-bind_download="name">Download</a>
+      <a data-bind_href="url" target="_blank" data-bind_inner-text="previewText"></a> 
+      <a data-bind_href="url" data-bind_download="name" data-bind_inner-text="downloadText"></a>
     </li>
   </template>
   <template id="codecOutputTemplate">
@@ -42,10 +42,6 @@
           <fieldset>
             <legend>Configure</legend>
           <label for="fileSelect">Image to Optimize: <input type="file" id="fileSelect" accept="image/*"></label>
-          <div>
-            <label for="saveOutput">Save output to disk: <input type="checkbox" id="save"></label>
-            <label for="generatePreview">Generate Preview Page: <input type="checkbox" id="generatePreview" disabled></label>
-          </div>
           <button id="goButton" disabled>Go</button>
           </fieldset>
         </div>
@@ -59,11 +55,9 @@
 
       <section id="output-section">
         <h2>Optimized Images</h2>
+        <div><button id="saveAllButton">Save All</button></div>
         <div id="image-output">
           Your optimized images will appear here.
-        </div>
-        <div id="loader-container" class="hidden">
-          <div id="loader">Loading...</div>
         </div>
       </section>
 

@@ -177,34 +177,22 @@ div.output-container ul {
 
 }
 
-#loader-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  backdrop-filter: blur(5px);
-  background-color: transparent;
-  display: none;
-  display: flex;
-  align-items: center;
+div.output-container ul li.current {
+  color: red;
 }
 
-#loader {
-  color: #2a2a2e;
-  font-size: 90px;
-  text-indent: -9999em;
-  overflow: hidden;
-  width: 1em;
-  height: 1em;
-  border-radius: 50%;
-  margin: 72px auto;
-  position: relative;
-  -webkit-transform: translateZ(0);
-  -ms-transform: translateZ(0);
-  transform: translateZ(0);
+div.output-container ul li.done::marker {
+  color: green;
+  content: '✔ ';
+  padding-right: 1em;
+}
+
+div.output-container ul li.working::marker {
+  content: '➤';
   -webkit-animation: load6 1.7s infinite ease, round 1.7s infinite ease;
   animation: load6 1.7s infinite ease, round 1.7s infinite ease;
+  transform-origin: center;
+  transform: translateX(-1em);
 }
 
 @keyframes load6 {
@@ -233,10 +221,10 @@ div.output-container ul {
 @keyframes round {
   0% {
     -webkit-transform: rotate(0deg);
-    transform: rotate(0deg);
+    transform: translateX(-0.5em) rotate(0deg) ;
   }
   100% {
     -webkit-transform: rotate(360deg);
-    transform: rotate(360deg);
+    transform: translateX(-0.5em) rotate(360deg);
   }
 }

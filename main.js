@@ -7,6 +7,7 @@ import { basename, extname } from "./utils";
 
 import { registerSW } from "virtual:pwa-register";
 import { applyTemplate } from "./lib/applyTemplate";
+import { getConversionStrategyForInput, getMimeTypeFromStrategy, getExtensionFromMimeType, getCodecFromMimeType, getCLIOptionsFromMimeType } from "./lib/mime-utils";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -32,20 +33,49 @@ const calculateSizes = (width, height) => {
 };
 
 let file;
+let allImages = [];
+
+const onSaveAll = async (e) => {
+
+  if (allImages.length == 0) {
+    alert('Please encode some images')
+    return;
+  }
+
+  if ('showDirectoryPicker' in window === false) {
+    alert('This feature only works in a browser that supports the File System API.')
+    return;
+  }
+
+  try {
+    const directoryHandle = await window.showDirectoryPicker();
+    if (directoryHandle !== undefined) {
+      for (let image of allImages) {
+        const file = await directoryHandle.getFileHandle(image.name, { create: true });
+        const writable = await file.createWritable();
+        await image.stream().pipeTo(writable);
+      }
+    }
+  }
+  catch (err) {
+    console.log(err)
+  }
+}
 
 const onFile = (e) => {
   goButton.disabled = false;
   file = (e.target?.files || e.files)[0];
   let root = document.documentElement;
-  root.style.setProperty('--filename', `'${file.name}'`);
-}
+  root.style.setProperty("--filename", `'${file.name}'`);
+};
 
 const onGoClicked = (e) => {
   const { name } = file;
-
+  
   // We have to load the image to get the width and height.
   preview.src = URL.createObjectURL(file);
   preview.onload = async () => {
+  
     const [
       sourceElementStrategy,
       imgElementStrategy,
@@ -71,29 +101,24 @@ const onGoClicked = (e) => {
 
     Prism.highlightAll();
 
-    const spinner = document.getElementById("loader-container");
-    spinner.classList.remove("hidden");
-
     const rootOutputElement = document.getElementById("image-output");
-    rootOutputElement.innerHTML = ""; 
+    rootOutputElement.innerHTML = "";
 
     renderOriginal(file, rootOutputElement, sizes[0][0], sizes[0][1]);
 
-    await compressAndOutputImages(
-      file,
-      sizes,
-      rootOutputElement,
-      sourceElementMimeType
-    );
-    await compressAndOutputImages(file, sizes, rootOutputElement, imgElementMimeType);
+    createWorklistUI(file, sizes, rootOutputElement, sourceElementMimeType);
+    createWorklistUI(file, sizes, rootOutputElement, imgElementMimeType);
 
-    spinner.classList.add("hidden");
+    const outputImages = []
+    allImages.push(...await compressAndOutputImages(file, sizes, sourceElementMimeType));
+    allImages.push(...await compressAndOutputImages(file, sizes, imgElementMimeType));
   };
 };
 
 fileSelect.addEventListener("change", onFile);
 imageDrop.addEventListener("filedrop", onFile);
 goButton.addEventListener("click", onGoClicked);
+saveAllButton.addEventListener("click", onSaveAll);
 
 Prism.hooks.add("before-highlight", function (env) {
   env.code = env.element.innerText;
@@ -167,93 +192,15 @@ const updateCLI = (sizes, name, targetBaseCodec, targetSourceCodec) => {
   cli.innerText = cliCommands.join(" && \\ \n  ");
 };
 
-const getCLIOptionsFromMimeType = (mimeType) => {
-  const extensions = {
-    "image/png": { oxipng: "auto" },
-    "image/avif": { avif: "auto" },
-    "image/jpeg": { mozjpeg: "auto" },
-    "image/webp": { webp: "auto" },
-  };
-
-  if (mimeType in extensions) {
-    return extensions[mimeType];
-  }
-
-  throw "Mime-type unknown.";
-};
-
-const getExtensionFromMimeType = (mimeType) => {
-  const extensions = {
-    "image/png": "png",
-    "image/avif": "avif",
-    "image/jpeg": "jpeg",
-    "image/webp": "webp",
-  };
-
-  if (mimeType in extensions) {
-    return extensions[mimeType];
-  }
-
-  throw "Mime-type unknown.";
-};
-
-const getCodecFromMimeType = (mimeType) => {
-  const codecs = {
-    "image/png": "oxipng",
-    "image/avif": "avif",
-    "image/jpeg": "mozjpeg",
-    "image/webp": "webp",
-  };
-
-  if (mimeType in codecs) {
-    return codecs[mimeType];
-  }
-
-  throw "Mime-type unknown.";
-};
-
-const getConversionStrategyForInput = (mimeType) => {
-  // Our strategy is here.
-  // <source> is 0, <img> is 1.
-  const codecs = {
-    "image/png": ["avif", "png"],
-    "image/avif": ["avif", "png"], // AVIF should be in the source, then png in the image.
-    "image/jpeg": ["avif", "mozjpeg"],
-    "image/webp": ["avif", "webp"], // Should we actually have a fallback of png...?
-  };
-
-  if (mimeType in codecs) {
-    return codecs[mimeType];
-  }
-
-  throw "Mime-type unknown.";
-};
-
-const getMimeTypeFromStrategy = (mimeType) => {
-  // Our strategy is here.
-  // <source> is 0, <img> is 1.
-  const codecs = {
-    png: "image/png",
-    avif: "image/avif",
-    mozjpeg: "image/jpeg",
-    webp: "image/webp",
-  };
-
-  if (mimeType in codecs) {
-    return codecs[mimeType];
-  }
-
-  throw "Mime-type unknown.";
-};
-
 const renderOriginal = (fileToConvert, rootElement, width, height) => {
-
   const { name, type } = fileToConvert;
 
-  rootElement.appendChild(applyTemplate(codecOutputTemplate, {
-    codec: 'original',
-    id: `original-output`
-  }));
+  rootElement.appendChild(
+    applyTemplate(codecOutputTemplate, {
+      codec: "original",
+      id: `original-output`,
+    })
+  );
 
   const outputElement = document.getElementById(`original-output`);
 
@@ -266,46 +213,74 @@ const renderOriginal = (fileToConvert, rootElement, width, height) => {
       size: `${(fileToConvert.size / 1024).toFixed(2)} KB`,
     })
   );
+};
+
+function createWorklistUI(fileToConvert, sizes, rootElement, mimeType) {
+  const { name } = fileToConvert;
+  const extension = getExtensionFromMimeType(mimeType);
+
+  rootElement.appendChild(
+    applyTemplate(codecOutputTemplate, {
+      codec: getCodecFromMimeType(mimeType),
+      id: `${getCodecFromMimeType(mimeType)}-output`,
+    })
+  );
+
+  const outputElement = document.getElementById(
+    `${getCodecFromMimeType(mimeType)}-output`
+  );
+
+  for (let [width, height] of sizes) {
+    outputElement.appendChild(
+      applyTemplate(previewListItemTemplate, {
+        name: `${basename(name, extname(name))}-${width}.${extension}`,
+        width,
+        height,
+        previewText: "",
+        downloadText: "",
+        size: `Unknown Size`,
+      })
+    );
+  }
 }
 
-
-async function compressAndOutputImages(
-  fileToConvert,
-  sizes,
-  rootElement,
-  mimeType
-) {
+async function compressAndOutputImages(fileToConvert, sizes, mimeType, directoryHandle) {
   const { name } = fileToConvert;
   const extension = getExtensionFromMimeType(mimeType);
   const cliOptions = getCLIOptionsFromMimeType(mimeType);
-
-  rootElement.appendChild(applyTemplate(codecOutputTemplate, {
-    codec: getCodecFromMimeType(mimeType),
-    id: `${getCodecFromMimeType(mimeType)}-output`
-  }));
-
-  const outputElement = document.getElementById(`${getCodecFromMimeType(mimeType)}-output`);
+  const compressedImages = [];
 
   for (let [width, height] of sizes) {
     cliOptions["resize"] = { width, height };
+
+    const elementToUpdate = document.getElementById(
+      `${basename(name, extname(name))}-${width}.${extension}`
+    );
+
+    elementToUpdate.classList.add("working");
 
     const results = await run({ files: [fileToConvert], ...cliOptions });
 
     for (let file of results.values()) {
       const outputFile = file.outputs[0];
-      const output = new Blob([file.outputs[0].out.buffer], { type: mimeType });
-
+      const newName = `${basename(name, extname(name))}-${width}.${extension}`;
+      const output = new File([file.outputs[0].out.buffer], newName, { type: mimeType });
+      compressedImages.push(output);
+      
       const url = URL.createObjectURL(output);
 
-      outputElement.appendChild(
-        applyTemplate(previewListItemTemplate, {
-          name: `${basename(name, extname(name))}-${width}.${extension}`,
-          url,
-          width,
-          height,
-          size: `${(outputFile.outputSize / 1024).toFixed(2)} KB`,
-        })
-      );
+      const newElement = applyTemplate(previewListItemTemplate, {
+        name: newName,
+        url,
+        width,
+        height,
+        previewText: "Preview",
+        downloadText: "Download",
+        size: `${(outputFile.outputSize / 1024).toFixed(2)} KB`,
+      });
+
+      elementToUpdate.replaceWith(newElement);
     }
   }
+  return compressedImages;
 }
