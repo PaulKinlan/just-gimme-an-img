@@ -5077,7 +5077,7 @@ class WorkerPool {
     const writer = this.workerQueue.writable.getWriter();
 
     for (let i = 0; i < numWorkers; i++) {
-      writer.write(new Worker(new URL("worker-2ead94c1.js", import.meta.url), {
+      writer.write(new Worker(new URL("/worker-2ead94c1.js", import.meta.url), {
         type: 'module'
       }));
     }
