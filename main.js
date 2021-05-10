@@ -155,7 +155,7 @@ const updateHTML = (
         ([width]) =>
           `${encodeURIComponent(
             nameNoExtension
-          )}\-${width}w.${sourceExtension} ${width}w`
+          )}\-${width}.${sourceExtension} ${width}w`
       )
       .join(", \n\t\t")}">`;
 
@@ -169,7 +169,7 @@ const updateHTML = (
         ([width]) =>
           `${encodeURIComponent(
             nameNoExtension
-          )}\-${width}w.${imgExtension} ${width}w`
+          )}\-${width}.${imgExtension} ${width}w`
       )
       .join(", \n\t\t")}"
     sizes="100vw"
@@ -185,7 +185,7 @@ const updateHTML = (
 const updateCLI = (sizes, name, targetBaseCodec, targetSourceCodec) => {
   let cliCommands = sizes.map(
     ([width, height]) =>
-      `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --${targetSourceCodec} auto -s \-${width}w ${name
+      `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --${targetSourceCodec} auto -s \-${width} ${name
         .split(" ")
         .join("\\ ")}`
   );
@@ -193,7 +193,7 @@ const updateCLI = (sizes, name, targetBaseCodec, targetSourceCodec) => {
   cliCommands.push(
     ...sizes.map(
       ([width, height]) =>
-        `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --${targetBaseCodec} auto -s \-${width}w ${name
+        `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --${targetBaseCodec} auto -s \-${width} ${name
           .split(" ")
           .join("\\ ")}`
     )
