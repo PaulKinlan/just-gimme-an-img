@@ -1,5 +1,4 @@
 import "./style.css";
-import { run } from "./squoosh/index.js";
 import "file-drop-element";
 import "prismjs/themes/prism-okaidia.css";
 import Prism from "prismjs";
@@ -14,45 +13,7 @@ import {
   getCodecFromMimeType,
   getCLIOptionsFromMimeType,
 } from "./lib/mime-utils";
-
-class ImageOptimizer {
-  constructor() {
-    this._file = null;
-  }
-
-  // async, but returns a promis
-  load(file) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        this._file = file;
-        let { naturalHeight, naturalWidth } = img;
-        const metadata = {
-          naturalWidth,
-          naturalHeight,
-          type: file.type,
-          name: file.name,
-        };
-        this._metadata = metadata;
-        resolve(metadata);
-      };
-      img.onerror = (error) => reject(error);
-    });
-  }
-
-  optimize(options) {
-    return run({ files: [this._file], ...options });
-  }
-
-  get metadata() {
-    return this._metadata;
-  }
-
-  get file() {
-    return this._file;
-  }
-}
+import { ImageOptimizer } from "./lib/ImageOptimizer";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -62,20 +23,6 @@ const updateSW = registerSW({
     // show a ready to work offline to user
   },
 });
-
-const calculateSizes = (width, height) => {
-  const sizes = [];
-  let counter = 1;
-  let scaledWidth = width;
-  let scaledHeight = height;
-  do {
-    scaledWidth = width / counter;
-    scaledHeight = height / counter;
-    sizes.push([Math.ceil(scaledWidth), Math.ceil(scaledHeight)]);
-    counter++;
-  } while (scaledWidth > 320);
-  return sizes;
-};
 
 const imageOptimizer = new ImageOptimizer();
 
@@ -133,7 +80,7 @@ const onFile = (e) => {
       const imgElementMimeType = getMimeTypeFromStrategy(imgElementStrategy);
 
       //const { naturalHeight, naturalWidth } = i.load;
-      const sizes = calculateSizes(naturalWidth, naturalHeight);
+      const sizes = imageOptimizer.optimalSizes;
 
       updateCLI(sizes, name, sourceElementStrategy, imgElementStrategy);
       updateHTML(
@@ -150,15 +97,15 @@ const onFile = (e) => {
       const rootOutputElement = document.getElementById("image-output");
       rootOutputElement.innerHTML = "";
 
-      renderOriginal(rootOutputElement, sizes[0][0], sizes[0][1]);
+      renderOriginal(rootOutputElement);
 
-      createWorklistUI(sizes, rootOutputElement, sourceElementMimeType);
-      createWorklistUI(sizes, rootOutputElement, imgElementMimeType);
+      createWorklistUI(rootOutputElement, sourceElementMimeType);
+      createWorklistUI(rootOutputElement, imgElementMimeType);
     });
 };
 
 const onGoClicked = async (e) => {
-  const file = imageOptimizer.file;
+  const {file, optimalSizes} = imageOptimizer;
 
   // We have to load the image to get the width and height.
   const [
@@ -169,15 +116,11 @@ const onGoClicked = async (e) => {
   const sourceElementMimeType = getMimeTypeFromStrategy(sourceElementStrategy);
   const imgElementMimeType = getMimeTypeFromStrategy(imgElementStrategy);
 
-  const { naturalHeight, naturalWidth } = imageOptimizer.metadata;
-
-  const sizes = calculateSizes(naturalWidth, naturalHeight);
-
   allImages.push(
-    ...(await compressAndOutputImages(file, sizes, sourceElementMimeType))
+    ...(await compressAndOutputImages(file, optimalSizes, sourceElementMimeType))
   );
   allImages.push(
-    ...(await compressAndOutputImages(file, sizes, imgElementMimeType))
+    ...(await compressAndOutputImages(file, optimalSizes, imgElementMimeType))
   );
 };
 
@@ -258,9 +201,9 @@ const updateCLI = (sizes, name, targetBaseCodec, targetSourceCodec) => {
   cli.innerText = cliCommands.join(" && \\ \n  ");
 };
 
-const renderOriginal = (rootElement, width, height) => {
-  const file = imageOptimizer.file;
-  const { name, type } = file;
+const renderOriginal = (rootElement) => {
+  const { file, metadata } = imageOptimizer;
+  const { name } = file;
 
   rootElement.appendChild(
     applyTemplate(codecOutputTemplate, {
@@ -275,15 +218,15 @@ const renderOriginal = (rootElement, width, height) => {
     applyTemplate(previewListItemTemplate, {
       name: `${name}`,
       url: URL.createObjectURL(file),
-      width,
-      height,
+      width: metadata.naturalWidth,
+      height: metadata.naturalHeight,
       size: `${(file.size / 1024).toFixed(2)} KB`,
     })
   );
 };
 
-function createWorklistUI(sizes, rootElement, mimeType) {
-  const { name } = imageOptimizer.file;
+function createWorklistUI(rootElement, mimeType) {
+  const { metadata: {name}, optimalSizes } = imageOptimizer;
   const extension = getExtensionFromMimeType(mimeType);
 
   rootElement.appendChild(
@@ -297,7 +240,7 @@ function createWorklistUI(sizes, rootElement, mimeType) {
     `${getCodecFromMimeType(mimeType)}-output`
   );
 
-  for (let [width, height] of sizes) {
+  for (let [width, height] of optimalSizes) {
     outputElement.appendChild(
       applyTemplate(previewListItemTemplate, {
         name: `${basename(name, extname(name))}-${width}.${extension}`,
