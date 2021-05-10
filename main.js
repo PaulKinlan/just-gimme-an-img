@@ -162,7 +162,7 @@ const updateHTML = (
   code.innerText = `<picture>
   ${sources}
   <img 
-    alt="The Author should a description of what appears in the image."
+    alt="The author should add a description of what appears in the image."
     src="${encodeURIComponent(nameNoExtension)}.${imgExtension}" 
     srcset="${sizes
       .map(
@@ -177,8 +177,7 @@ const updateHTML = (
     decoding="async"
     height="${naturalHeight}"
     width="${naturalWidth}"
-    style="content-visibility: auto; max-width: 100%; height: auto;"
-  />
+    style="content-visibility: auto; max-width: 100%; height: auto;">
 </picture>`;
 };
 
