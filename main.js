@@ -13,7 +13,8 @@ import {
   getCodecFromMimeType,
   getCLIOptionsFromMimeType,
 } from "./lib/mime-utils";
-import { ImageOptimizer } from "./lib/ImageOptimizer";
+
+import { App, ImageTask } from "./lib/app";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -24,12 +25,10 @@ const updateSW = registerSW({
   },
 });
 
-const imageOptimizer = new ImageOptimizer();
-
-let allImages = [];
+let app = new App();
 
 const onSaveAll = async (e) => {
-  if (allImages.length == 0) {
+  if (app.state.images.length == 0) {
     alert("Please encode some images");
     return;
   }
@@ -60,52 +59,32 @@ const onSaveAll = async (e) => {
 const onFile = (e) => {
   const file = (e.target?.files || e.files)[0];
 
+  const { state, optimizer } = app;
+
+  state.fileName = file.name;
+  state.images.length = 0;
+  state.running = false;
+
   goButton.disabled = false;
 
-  imageOptimizer
+  optimizer
     .load(file)
-    .then(({ naturalWidth, naturalHeight, type, name }) => {
-      let root = document.documentElement;
+    .then(() => {
 
-      root.style.setProperty("--filename", `'${name}'`);
+      state.images.length = 0;
+      // create the images we need to populate.
+      for (let [width, height] of optimizer.optimalSizes) {
+        state.images.push(new ImageTask(width, height));
+      }
 
-      const [
-        sourceElementStrategy,
-        imgElementStrategy,
-      ] = getConversionStrategyForInput(type);
-
-      const sourceElementMimeType = getMimeTypeFromStrategy(
-        sourceElementStrategy
-      );
-      const imgElementMimeType = getMimeTypeFromStrategy(imgElementStrategy);
-
-      //const { naturalHeight, naturalWidth } = i.load;
-      const sizes = imageOptimizer.optimalSizes;
-
-      updateCLI(sizes, name, sourceElementStrategy, imgElementStrategy);
-      updateHTML(
-        sizes,
-        name,
-        sourceElementMimeType,
-        imgElementMimeType,
-        naturalHeight,
-        naturalWidth
-      );
-
-      Prism.highlightAll();
-
-      const rootOutputElement = document.getElementById("image-output");
-      rootOutputElement.innerHTML = "";
-
-      renderOriginal(rootOutputElement);
-
-      createWorklistUI(rootOutputElement, sourceElementMimeType);
-      createWorklistUI(rootOutputElement, imgElementMimeType);
+      render();
     });
 };
 
 const onGoClicked = async (e) => {
-  const {file, optimalSizes} = imageOptimizer;
+  const { optimizer, optimizer: {file}, state } = app;
+
+  state.running = true;
 
   // We have to load the image to get the width and height.
   const [
@@ -116,31 +95,71 @@ const onGoClicked = async (e) => {
   const sourceElementMimeType = getMimeTypeFromStrategy(sourceElementStrategy);
   const imgElementMimeType = getMimeTypeFromStrategy(imgElementStrategy);
 
-  allImages.push(
-    ...(await compressAndOutputImages(file, optimalSizes, sourceElementMimeType))
+  await compressAndOutputImages(sourceElementMimeType);
+  await compressAndOutputImages(imgElementMimeType);
+
+  state.running = false;
+};
+
+const onFileNameChanged = (e) => {
+  app.state.fileName = e.target.value;
+  render();
+};
+
+const onBasePathChanged = (e) => {
+  app.state.basePath = e.target.value;
+  render();
+};
+
+const render = () => {
+  const { state, optimizer } = app;
+  const { type } = optimizer.metadata;
+
+  let root = document.documentElement;
+  root.style.setProperty("--filename", `'${ state.fileName }'`);
+  
+  const [
+    sourceElementStrategy,
+    imgElementStrategy,
+  ] = getConversionStrategyForInput(type);
+
+  const sourceElementMimeType = getMimeTypeFromStrategy(
+    sourceElementStrategy
   );
-  allImages.push(
-    ...(await compressAndOutputImages(file, optimalSizes, imgElementMimeType))
-  );
+  const imgElementMimeType = getMimeTypeFromStrategy(imgElementStrategy);
+
+  updateCLI(sourceElementStrategy, imgElementStrategy);
+  updateHTML(sourceElementMimeType, imgElementMimeType);
+
+  Prism.highlightAll();
+
+  const rootOutputElement = document.getElementById("image-output");
+  rootOutputElement.innerHTML = "";
+
+  renderOriginal(rootOutputElement);
+
+  updateWorklistUI(rootOutputElement, sourceElementMimeType);
+  updateWorklistUI(rootOutputElement, imgElementMimeType);
 };
 
 fileSelect.addEventListener("change", onFile);
 imageDrop.addEventListener("filedrop", onFile);
 goButton.addEventListener("click", onGoClicked);
 saveAllButton.addEventListener("click", onSaveAll);
+fileName.addEventListener("change", onFileNameChanged);
+filePath.addEventListener("change", onBasePathChanged);
 
 Prism.hooks.add("before-highlight", function (env) {
   env.code = env.element.innerText;
 });
 
 const updateHTML = (
-  sizes,
-  name,
   sourceElementMimeType,
-  imgElementMimeType,
-  naturalHeight,
-  naturalWidth
+  imgElementMimeType
 ) => {
+  const sizes = app.optimizer.optimalSizes;
+  const { naturalHeight, naturalWidth } = app.optimizer.metadata;
+  const name = app.optimizer.metadata.name; // Because we need it for Command line.
   const extension = extname(name);
   const nameNoExtension = basename(name, extension);
 
@@ -181,7 +200,10 @@ const updateHTML = (
 </picture>`;
 };
 
-const updateCLI = (sizes, name, targetBaseCodec, targetSourceCodec) => {
+const updateCLI = (targetBaseCodec, targetSourceCodec) => {
+  const sizes = app.optimizer.optimalSizes;
+  const name = app.optimizer.metadata.name;
+
   let cliCommands = sizes.map(
     ([width, height]) =>
       `npx @squoosh/cli --resize "{width: ${width}, height: ${height}}" --${targetSourceCodec} auto -s \-${width} ${name
@@ -201,7 +223,7 @@ const updateCLI = (sizes, name, targetBaseCodec, targetSourceCodec) => {
 };
 
 const renderOriginal = (rootElement) => {
-  const { file, metadata } = imageOptimizer;
+  const { file, metadata } = app.optimizer;
   const { name } = file;
 
   rootElement.appendChild(
@@ -219,13 +241,14 @@ const renderOriginal = (rootElement) => {
       url: URL.createObjectURL(file),
       width: metadata.naturalWidth,
       height: metadata.naturalHeight,
+      status: 'original',
       size: `${(file.size / 1024).toFixed(2)} KB`,
     })
   );
 };
 
-function createWorklistUI(rootElement, mimeType) {
-  const { metadata: {name}, optimalSizes } = imageOptimizer;
+function updateWorklistUI(rootElement, mimeType) {
+  const { fileName, images } = app.state;
   const extension = getExtensionFromMimeType(mimeType);
 
   rootElement.appendChild(
@@ -239,59 +262,49 @@ function createWorklistUI(rootElement, mimeType) {
     `${getCodecFromMimeType(mimeType)}-output`
   );
 
-  for (let [width, height] of optimalSizes) {
+  for (let image of images) {
+    const { width, height, url, size } = image;
     outputElement.appendChild(
       applyTemplate(previewListItemTemplate, {
-        name: `${basename(name, extname(name))}-${width}.${extension}`,
+        name: `${basename(fileName, extname(fileName))}-${width}.${extension}`,
         width,
         height,
-        previewText: "",
-        downloadText: "",
-        size: `Unknown Size`,
+        url,
+        status: (url) ? 'done' : 'not-started',
+        size: (size == 0) ? 'Unknown Size' : `${(size / 1024).toFixed(2)} KB`,
       })
     );
   }
 }
 
-async function compressAndOutputImages(fileToConvert, sizes, mimeType) {
-  const { name } = fileToConvert;
+async function compressAndOutputImages(mimeType) {
+  const { optimizer, state: {images, fileName} } = app;
   const extension = getExtensionFromMimeType(mimeType);
   const cliOptions = getCLIOptionsFromMimeType(mimeType);
-  const compressedImages = [];
 
-  for (let [width, height] of sizes) {
-    cliOptions["resize"] = { width, height };
+  for (let image of images) {
+
+    cliOptions["resize"] = { width:image.width, height:image.height };
 
     const elementToUpdate = document.getElementById(
-      `${basename(name, extname(name))}-${width}.${extension}`
+      `${basename(fileName, extname(fileName))}-${image.width}.${extension}`
     );
 
     elementToUpdate.classList.add("working");
 
-    const results = await imageOptimizer.optimize(cliOptions);
+    const results = await optimizer.optimize(cliOptions);
 
     for (let file of results.values()) {
       const outputFile = file.outputs[0];
-      const newName = `${basename(name, extname(name))}-${width}.${extension}`;
+      const newName = `${basename(fileName, extname(fileName))}-${image.width}.${extension}`;
       const output = new File([file.outputs[0].out.buffer], newName, {
         type: mimeType,
       });
-      compressedImages.push(output);
 
-      const url = URL.createObjectURL(output);
-
-      const newElement = applyTemplate(previewListItemTemplate, {
-        name: newName,
-        url,
-        width,
-        height,
-        previewText: "Preview",
-        downloadText: "Download",
-        size: `${(outputFile.outputSize / 1024).toFixed(2)} KB`,
-      });
-
-      elementToUpdate.replaceWith(newElement);
+      image.compressedImage = output;
+      image.size = outputFile.outputSize;
+  
+      render();
     }
   }
-  return compressedImages;
 }

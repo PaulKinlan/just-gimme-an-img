@@ -13,11 +13,19 @@
 
 <body>
   <template id="previewListItemTemplate">
-    <li data-bind_id="name">
-      <span data-bind_inner-text="width"></span>x<span data-bind_inner-text="height"></span>px
-      <span data-bind_inner-text="size"></span>
-      <a data-bind_href="url" target="_blank" data-bind_inner-text="previewText"></a> 
-      <a data-bind_href="url" data-bind_download="name" data-bind_inner-text="downloadText"></a>
+    <li data-bind_id="name" data-bind_class-list="status">
+      <div class="dimensions">
+        <span data-bind_inner-text="width"></span>x<span data-bind_inner-text="height"></span>px
+      </div>
+      <span data-bind_inner-text="size" class="size"></span>
+      <div class="tools">
+        <a data-bind_href="url" target="_blank" data-bind_inner-text="previewText">
+          <img src="/images/preview.svg" alt="Preview">
+        </a> 
+        <a data-bind_href="url" data-bind_download="name" data-bind_inner-text="downloadText">
+          <img src="/images/file_download.svg" alt="Download">
+        </a>
+      </div>
     </li>
   </template>
   <template id="codecOutputTemplate">
@@ -41,10 +49,16 @@
           </ul>
           <p>and best of all this is all done on the client, your images never leave your machine.</p>
           <fieldset>
-            <legend>Configure</legend>
-          <label for="fileSelect">Image to Optimize: <input type="file" id="fileSelect" accept="image/*"></label>
-
-          <button id="goButton" disabled>Optimize Images</button>
+            <legend>Image</legend>
+            <label for="fileSelect">Image to Optimize: <input type="file" id="fileSelect" accept="image/*"></label>
+            <details>
+              <summary>Options</summary>
+              <div>
+                <label>Base path: <input type="text" name="path" id="filePath" disabled></label>
+                <label>File name: <input type="text" name="name" id="fileName"></label>
+              </div>
+            </details>
+            <button id="goButton" disabled>Optimize Images</button>
           </fieldset>
         </div>
       </section>
