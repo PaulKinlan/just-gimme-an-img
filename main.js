@@ -159,7 +159,7 @@ const updateHTML = (
 ) => {
   const sizes = app.optimizer.optimalSizes;
   const { naturalHeight, naturalWidth } = app.optimizer.metadata;
-  const name = app.optimizer.metadata.name; // Because we need it for Command line.
+  const name = app.state.fileName;
   const extension = extname(name);
   const nameNoExtension = basename(name, extension);
 
