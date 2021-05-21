@@ -14,7 +14,8 @@
   "dependencies": {
     "@web/rollup-plugin-import-meta-assets": "^1.0.6",
     "file-drop-element": "^1.0.1",
-    "prismjs": "^1.23.0"
+    "prismjs": "^1.23.0",
+    "web-vitals": "^1.1.2"
   },
   "license": "Apache-2.0",
   "description": "Website to optimize images",
