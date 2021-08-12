@@ -1,6 +1,6 @@
 #!/usr/bin/env deno run --location http://example.com/path 
 
-import { run } from "../squoosh/index.js";
+// import { run } from "../squoosh/index.js";
 
 export default async (req) => {
 	req.respond({ body: `Hello, from Deno v${Deno.version.deno}!` });
