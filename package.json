@@ -7,7 +7,7 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "vercel": "^22.0.1",
+    "vercel": "^28.15.3",
     "vite": "^2.1.5",
     "vite-plugin-pwa": "^0.7.3"
   },
